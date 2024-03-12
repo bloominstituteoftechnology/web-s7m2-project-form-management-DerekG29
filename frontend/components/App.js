@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-let id = 0;
+let id = 1;
 const createID = () => id++;
 
 const initialTeam = [
@@ -8,52 +8,56 @@ const initialTeam = [
   { id: createID(), fname: 'Bob', lname: 'Johnson', bio: 'Aspiring web developer with a background in graphic design. I enjoy bringing creativity and aesthetics to the digital world.' }
 ]
 
-const initialValues = { fnameInput: '', lnameInput: '', bioInput: '' };
+const initialValues = { fname: '', lname: '', bio: '' };
 
 export default function App() {
   const [formValues, setFormValues] = useState(initialValues);
   const [teamMembers, setTeamMembers] = useState(initialTeam);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  useEffect(() => {
+    if (editing === null) {
+      setFormValues(initialValues);
+    } else {
+      const { fname, lname, bio } = teamMembers.find(member => member.id === editing);
+      setFormValues({ fname, lname, bio });
+    }
+  }, [editing])
 
   const handleChange = evt => {
-    const { name, value } = evt.target;
-    setFormValues({ ...formValues, [name]: value });
-  }
-
-  const getMember = id => {
-    return { ...teamMembers.find(member => member.id === id) };
+    const { id, value } = evt.target;
+    setFormValues({ ...formValues, [id]: value });
   }
 
   const handleSubmit = evt => {
     evt.preventDefault();
-    const { fnameInput, lnameInput, bioInput } = formValues;
-    if (editing !== false) {
-      const memberList = [...teamMembers];
-      memberList.forEach(member => {
-        if (member.id === editing) {
-          member.fname = fnameInput;
-          member.lname = lnameInput;
-          member.bio = bioInput
-        }
-        setTeamMembers([...memberList]);
-      })
-      setEditing(false);
+    if (editing) {
+      updateMember();
     } else {
-      setTeamMembers(teamMembers.concat([{
-        id: createID(),
-        fname: fnameInput,
-        lname: lnameInput,
-        bio: bioInput
-      }]))
+      addMember();
     }
     setFormValues(initialValues);
+    console.log(teamMembers);
+  }
+
+  const updateMember = () => {
+    setTeamMembers(prevMembers => prevMembers.map(member => {
+      if (member.id === editing) {
+        return { ...member, ...formValues };
+      }
+      return member;
+    })
+    )
+    setEditing(null);
+  }
+
+  const addMember = () => {
+    const newMember = { id: createID(), ...formValues };
+    setTeamMembers([...teamMembers, newMember]);
   }
 
   const edit = id => {
     setEditing(id);
-    const selectedMember = getMember(id);
-    const { fname, lname, bio } = selectedMember;
-    setFormValues({ fnameInput: fname, lnameInput: lname, bioInput: bio });
   }
 
   return (
@@ -75,40 +79,37 @@ export default function App() {
         </div>
       </div>
       <div id='membersForm'>
-        <h2>{editing !== false ? "Edit" : "Add"} a Team Member</h2>
+        <h2>{editing ? "Edit" : "Add"} a Team Member</h2>
         <form onSubmit={handleSubmit}>
           <div>
-            <label htmlFor='fnameInput'>First Name</label>
+            <label htmlFor='fname'>First Name</label>
             <input
-              id='fnameInput'
-              name='fnameInput'
+              id='fname'
               type='text'
               placeholder='Type First Name'
-              value={formValues.fnameInput}
+              value={formValues.fname}
               onChange={handleChange}
               required
             />
           </div>
           <div>
-            <label htmlFor='lnameInput'>Last Name</label>
+            <label htmlFor='lname'>Last Name</label>
             <input
-              id='lnameInput'
-              name='lnameInput'
+              id='lname'
               type='text'
               placeholder='Type Last Name'
-              value={formValues.lnameInput}
+              value={formValues.lname}
               onChange={handleChange}
               required
             />
           </div>
           <div>
-            <label htmlFor='bioInput'>Bio</label>
+            <label htmlFor='bio'>Bio</label>
             <textarea
-              id='bioInput'
-              name='bioInput'
+              id='bio'
               type='text'
               placeholder='Type Bio'
-              value={formValues.bioInput}
+              value={formValues.bio}
               onChange={handleChange}
             ></textarea>
           </div>
@@ -120,4 +121,3 @@ export default function App() {
     </div>
   );
 }
-
